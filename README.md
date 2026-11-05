@@ -1,6 +1,6 @@
-# Analytics Agent
+# Data Viz Agent
 
-> Working name. A general data-analytics agent built on the foundation of the Meta Data Analytics and Visualization Agent hackathon project (RanveerRD/Meta-Data-Analytics-and-Visualization-Agent). Core rule kept: no silent choices that could change a number, and every number traceable to a query result. See [SCALE-UP.md](SCALE-UP.md) for the plan.
+> A general data-analytics agent built on the foundation of the Meta Data Analytics and Visualization Agent hackathon project (RanveerRD/Meta-Data-Analytics-and-Visualization-Agent). Core rule kept: no silent choices that could change a number, and every number traceable to a query result. See [SCALE-UP.md](SCALE-UP.md) for the plan.
 
 An AI data analyst for small and medium businesses, built for the Meta Global AI Developer Hackathon (26 Oct – 4 Nov 2026).
 
