@@ -15,7 +15,7 @@ from typing import Any
 from openai import OpenAI
 
 from agent.backend import DatabaseBackend
-from agent.provider import chat_round
+from agent.provider import chat_round, describe_api_error
 from agent.tools import ToolContext, dispatch, schemas_for
 from agent.tools.make_chart import chart_candidates
 MAX_TURNS = 30
@@ -259,7 +259,7 @@ def _round(
             history=history,
         )
     except Exception as exc:
-        print(f"api error: {type(exc).__name__}: {exc}")
+        print(f"api error: {describe_api_error(exc)}")
         return "", False, True
     if not result.usage_known:
         usage.known = False

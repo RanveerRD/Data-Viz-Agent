@@ -224,6 +224,33 @@ def build_client() -> tuple[OpenAI, str, str]:
     return OpenAI(base_url=META_BASE_URL, api_key=api_key), model, provider
 
 
+def describe_api_error(exc: BaseException) -> str:
+    """One-line description of an API failure, safe to print.
+
+    Adds where the answer came from (URL without query string, the Server
+    header) and the start of the response body, which is what tells a
+    provider error apart from a proxy or wrong-endpoint answer. Request
+    headers (the key) are never touched.
+    """
+    text = f"{type(exc).__name__}: {exc}"
+    response = getattr(exc, "response", None)
+    if response is None:
+        return text
+    parts = []
+    try:
+        url = getattr(getattr(response, "request", None), "url", None)
+        if url is not None:
+            parts.append("url=" + str(url).split("?", 1)[0])
+        server = response.headers.get("server")
+        if server:
+            parts.append(f"server={server}")
+        body = (response.text or "").strip().replace("\n", " ")[:300]
+        parts.append(f"body={body!r}" if body else "body=<empty>")
+    except Exception:
+        pass
+    return text + (" [" + ", ".join(parts) + "]" if parts else "")
+
+
 def privacy_note(provider: str) -> str:
     """One-line data-privacy caution for a provider ("" if none)."""
     spec = CHAT_PROVIDERS.get(provider)

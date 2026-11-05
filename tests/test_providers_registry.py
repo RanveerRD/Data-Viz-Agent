@@ -173,3 +173,21 @@ def test_other_errors_not_retried() -> None:
             client, "m", CHAT_PROVIDERS["groq"], "s", [], [], sleep=lambda s: None
         )
     assert len(client.chat.completions.calls) == 1
+
+
+def test_describe_api_error_shows_origin_without_secrets() -> None:
+    response = SimpleNamespace(
+        request=SimpleNamespace(url="https://x.test/v1/chat/completions?key=SECRET"),
+        headers={"server": "ESF"},
+        text="",
+    )
+    exc = RuntimeError("Error code: 404")
+    exc.response = response
+    out = prov.describe_api_error(exc)
+    assert "url=https://x.test/v1/chat/completions" in out
+    assert "server=ESF" in out and "body=<empty>" in out
+    assert "SECRET" not in out
+
+
+def test_describe_api_error_without_response() -> None:
+    assert prov.describe_api_error(ValueError("x")) == "ValueError: x"
