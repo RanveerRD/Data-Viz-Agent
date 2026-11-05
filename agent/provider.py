@@ -68,7 +68,7 @@ CHAT_PROVIDERS: dict[str, ChatProvider] = {
             base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
             key_env="GEMINI_API_KEY",
             model_env="GEMINI_MODEL",
-            default_model="gemini-2.5-flash",
+            default_model="gemini-3.8-flash",
             privacy_note="Free tier may use prompts to improve products.",
         ),
         ChatProvider(
