@@ -191,3 +191,28 @@ def test_describe_api_error_shows_origin_without_secrets() -> None:
 
 def test_describe_api_error_without_response() -> None:
     assert prov.describe_api_error(ValueError("x")) == "ValueError: x"
+
+
+@pytest.mark.parametrize("status", [502, 503, 504])
+def test_overload_statuses_are_retried(status) -> None:
+    class Overloaded(Exception):
+        status_code = status
+
+    client = _client([Overloaded("busy"), _ok("fine")])
+    waits: list[float] = []
+    result = _chat_completions_round(
+        client, "m", CHAT_PROVIDERS["gemini"], "s", [], [], sleep=waits.append
+    )
+    assert result.text == "fine" and waits == [1.0]
+
+
+def test_client_errors_are_not_retried() -> None:
+    class NotFound(Exception):
+        status_code = 404
+
+    client = _client([NotFound("gone")])
+    with pytest.raises(NotFound):
+        _chat_completions_round(
+            client, "m", CHAT_PROVIDERS["gemini"], "s", [], [], sleep=lambda s: None
+        )
+    assert len(client.chat.completions.calls) == 1

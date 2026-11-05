@@ -128,7 +128,10 @@ BASETEN_PRICE_INPUT_PER_M = 1.25
 BASETEN_PRICE_CACHED_INPUT_PER_M = 0.15
 BASETEN_PRICE_OUTPUT_PER_M = 4.25
 
-#: Rate-limit (HTTP 429) retries for Chat Completions providers.
+#: Transient HTTP statuses worth retrying: rate limit and overload/gateway.
+RETRYABLE_STATUSES = frozenset({429, 502, 503, 504})
+
+#: Retries for those statuses on Chat Completions providers.
 RATE_LIMIT_RETRIES = 3
 RATE_LIMIT_MAX_WAIT_S = 30.0
 
@@ -448,7 +451,7 @@ def _normalize_chat_response(response: Any) -> RoundResult:
 
 
 def _retry_after_seconds(exc: BaseException, attempt: int) -> float:
-    """Wait before a 429 retry: Retry-After if given, else 1s, 2s, 4s..."""
+    """Wait before a retry: Retry-After if given, else 1s, 2s, 4s..."""
     headers = getattr(getattr(exc, "response", None), "headers", None)
     value = None
     if headers is not None:
@@ -466,14 +469,14 @@ def _retry_after_seconds(exc: BaseException, attempt: int) -> float:
 def _create_with_backoff(
     client: Any, kwargs: dict[str, Any], sleep: Callable[[float], None]
 ) -> Any:
-    """chat.completions.create, retrying only HTTP 429 a few times."""
+    """chat.completions.create, retrying transient statuses a few times."""
     attempt = 0
     while True:
         try:
             return client.chat.completions.create(**kwargs)
         except Exception as exc:
             if (
-                getattr(exc, "status_code", None) != 429
+                getattr(exc, "status_code", None) not in RETRYABLE_STATUSES
                 or attempt >= RATE_LIMIT_RETRIES
             ):
                 raise
