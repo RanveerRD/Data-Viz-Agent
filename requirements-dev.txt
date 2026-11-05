@@ -1,0 +1,5 @@
+pytest==9.2.0
+# dev-only: running and viewing published Datasette links by hand.
+# The agent never imports these; the connector only builds URLs.
+datasette==0.65.5
+datasette-vega==0.6.2

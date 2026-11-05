@@ -1,0 +1,4 @@
+matplotlib==3.11.2
+openai==3.42.0
+pandas==3.1.0
+psycopg[binary]==3.3.6

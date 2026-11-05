@@ -1,0 +1,23 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Data (downloaded separately, never committed)
+data/
+*.db
+*.sqlite
+*.sqlite3
+*.csv
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Mac
+.DS_Store
+
+# Agent workspace (run records, never committed)
+workspace/
