@@ -216,3 +216,37 @@ def test_client_errors_are_not_retried() -> None:
             client, "m", CHAT_PROVIDERS["gemini"], "s", [], [], sleep=lambda s: None
         )
     assert len(client.chat.completions.calls) == 1
+
+
+def test_extra_content_round_trips_through_history() -> None:
+    sig = {"google": {"thought_signature": "SIG"}}
+    call = SimpleNamespace(
+        id="c1",
+        function=SimpleNamespace(name="list_tables", arguments="{}"),
+        extra_content=sig,
+    )
+    msg = SimpleNamespace(content=None, tool_calls=[call])
+    response = SimpleNamespace(choices=[SimpleNamespace(message=msg)], usage=None)
+    result = prov._normalize_chat_response(response)
+    assert result.calls[0]["extra_content"] == sig
+    history = [{"type": "function_call", "call_id": "c1", "name": "list_tables",
+                "arguments": "{}", "extra_content": sig}]
+    sent = prov._chat_messages("SYS", history)[1]["tool_calls"][0]
+    assert sent["extra_content"] == sig
+
+
+def test_extra_content_read_from_pydantic_model_extra() -> None:
+    sig = {"google": {"thought_signature": "SIG"}}
+    call = SimpleNamespace(
+        id="c1",
+        function=SimpleNamespace(name="t", arguments="{}"),
+        model_extra={"extra_content": sig},
+    )
+    assert prov._call_extra_content(call) == sig
+
+
+def test_calls_without_extra_content_unchanged() -> None:
+    sent = prov._chat_messages(
+        "SYS", [{"type": "function_call", "call_id": "c", "name": "t", "arguments": "{}"}]
+    )[1]["tool_calls"][0]
+    assert "extra_content" not in sent

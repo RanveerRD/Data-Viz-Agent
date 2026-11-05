@@ -368,21 +368,18 @@ def _chat_messages(
             continue
         kind = item.get("type")
         if kind == "function_call":
+            tool_call: dict[str, Any] = {
+                "id": item.get("call_id", ""),
+                "type": "function",
+                "function": {
+                    "name": item.get("name", ""),
+                    "arguments": item.get("arguments", "") or "{}",
+                },
+            }
+            if item.get("extra_content"):
+                tool_call["extra_content"] = item["extra_content"]
             messages.append(
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": item.get("call_id", ""),
-                            "type": "function",
-                            "function": {
-                                "name": item.get("name", ""),
-                                "arguments": item.get("arguments", "") or "{}",
-                            },
-                        }
-                    ],
-                }
+                {"role": "assistant", "content": None, "tool_calls": [tool_call]}
             )
         elif kind == "function_call_output":
             messages.append(
@@ -412,6 +409,16 @@ def _is_strict_rejection(exc: BaseException) -> bool:
     )
 
 
+def _call_extra_content(call: Any) -> Any:
+    """Provider-opaque extra_content on a tool call (e.g. Gemini 3's
+    thought signature), or None. It must be echoed back unchanged on the
+    next request or the provider rejects the call with a 400."""
+    extra = getattr(call, "extra_content", None)
+    if extra is None:
+        extra = (getattr(call, "model_extra", None) or {}).get("extra_content")
+    return extra or None
+
+
 def _normalize_chat_response(response: Any) -> RoundResult:
     """Chat Completions response normalized. reasoning_content is dropped."""
     choices = getattr(response, "choices", None) or []
@@ -425,15 +432,17 @@ def _normalize_chat_response(response: Any) -> RoundResult:
             arguments = (
                 getattr(function, "arguments", "") if function is not None else ""
             )
-            calls.append(
-                {
-                    "id": getattr(call, "id", ""),
-                    "name": getattr(function, "name", "")
-                    if function is not None
-                    else "",
-                    "arguments": arguments or "{}",
-                }
-            )
+            entry = {
+                "id": getattr(call, "id", ""),
+                "name": getattr(function, "name", "")
+                if function is not None
+                else "",
+                "arguments": arguments or "{}",
+            }
+            extra = _call_extra_content(call)
+            if extra:
+                entry["extra_content"] = extra
+            calls.append(entry)
     # NOTE: message.reasoning_content is deliberately never read here: it
     # stays out of the result, history, records, logs and errors.
     usage = getattr(response, "usage", None)

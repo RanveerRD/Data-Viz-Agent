@@ -269,14 +269,17 @@ def _round(
         usage.total_tokens += result.total_tokens
         usage.cached_input_tokens += result.cached_input_tokens
     for call in result.calls:
-        history.append(
-            {
-                "type": "function_call",
-                "call_id": call["id"],
-                "name": call["name"],
-                "arguments": call["arguments"],
-            }
-        )
+        item = {
+            "type": "function_call",
+            "call_id": call["id"],
+            "name": call["name"],
+            "arguments": call["arguments"],
+        }
+        if call.get("extra_content"):
+            # Provider-opaque data (Gemini thought signatures) that must be
+            # sent back unchanged with the call.
+            item["extra_content"] = call["extra_content"]
+        history.append(item)
         try:
             args = json.loads(call["arguments"] or "{}")
         except json.JSONDecodeError as exc:
