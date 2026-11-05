@@ -220,6 +220,8 @@ Set `MODEL_PROVIDER` in `.env`. Each provider except Meta is one entry in `CHAT_
 
 Not yet verified live: only Meta and Baseten have been used with a real key. The others are covered by tests with fakes. Default model names and free-tier limits change often, so check each provider's docs. HTTP 429 responses are retried up to 3 times, honouring `Retry-After` (capped at 30 s). **Free tiers often use prompts for training: send only public or synthetic data through them.**
 
+To check a provider with your own key, run `MODEL_PROVIDER=gemini python scripts/provider_smoke.py`. It asks one question over a tiny synthetic database and checks the figures (3 orders, 450), so no real data is sent.
+
 ## BigQuery (optional)
 
 ```bash
